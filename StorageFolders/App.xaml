@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<LightForms:LightFormsApplication xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:d="http://xamarin.com/schemas/2014/forms/design"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             x:Class="StorageFolders.App"
+             xmlns:LightForms="clr-namespace:LightForms;assembly=LightForms">
+    <Application.Resources>
+        <ResourceDictionary>
+
+            <!-- Fonts -->
+            <OnPlatform x:Key="MaterialIcons" x:TypeArguments="x:String">
+                <On Platform="iOS" Value="Material Icons" />
+                <On Platform="Android" Value="MaterialIcons.ttf#MaterialIcons" />
+                <On Platform="UWP" Value="Assets/Fonts/MaterialIcons.ttf#MaterialIcons" />
+            </OnPlatform>
+
+            <!-- https://andreinitescu.github.io/IconFont2Code/ -->
+
+            <!-- <Label Text="{StaticResource Menu}" FontFamily="{DynamicResource MaterialIcons}" FontSize="30" /> -->
+            <!-- Material Icons -->
+            <x:String x:Key="Menu">&#xe5d2;</x:String>
+            
+        </ResourceDictionary>
+    </Application.Resources>
+</LightForms:LightFormsApplication>

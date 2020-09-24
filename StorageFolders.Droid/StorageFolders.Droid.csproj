@@ -118,10 +118,6 @@
     <Folder Include="Resources\drawable\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\DeviceStorage\DeviceStorage.csproj">
-      <Project>{430cc79d-e584-4a34-afbf-8f08dade937d}</Project>
-      <Name>DeviceStorage</Name>
-    </ProjectReference>
     <ProjectReference Include="..\StorageFolders\StorageFolders.csproj">
       <Project>{492816cb-c03b-4c48-bb09-c68d53db670b}</Project>
       <Name>StorageFolders</Name>

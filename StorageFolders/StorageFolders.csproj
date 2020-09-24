@@ -12,6 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\DeviceStorage\DeviceStorage.csproj" />
+    <ProjectReference Include="..\DeviceStorage\DeviceStorage.csproj" />
   </ItemGroup>
 </Project>

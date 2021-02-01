@@ -5,7 +5,6 @@ using UWPFolders = Windows.Storage.StorageFolder;
 using UWPFile = Windows.Storage.StorageFile;
 using System;
 using System.IO;
-using System.Linq;
 using Windows.Storage;
 
 namespace Plugin.DeviceStorage
@@ -15,7 +14,7 @@ namespace Plugin.DeviceStorage
     /// </summary>
     public class DeviceStorageImplementation : IDeviceStorage
     {
-        public IStorageFolder Documents
+        public Task<IStorageFolder> Documents
         {
             get
             {
@@ -23,7 +22,7 @@ namespace Plugin.DeviceStorage
             }
         }
 
-        public IStorageFolder Downloads
+        public Task<IStorageFolder> Downloads
         {
             get
             {
@@ -31,7 +30,7 @@ namespace Plugin.DeviceStorage
             }
         }
 
-        public IStorageFolder Music
+        public Task<IStorageFolder> Music
         {
             get
             {
@@ -39,7 +38,7 @@ namespace Plugin.DeviceStorage
             }
         }
 
-        public IStorageFolder Pictures
+        public Task<IStorageFolder> Pictures
         {
             get
             {
@@ -47,7 +46,7 @@ namespace Plugin.DeviceStorage
             }
         }
 
-        public IStorageFolder CameraRoll
+        public Task<IStorageFolder> CameraRoll
         {
             get
             {
@@ -55,7 +54,7 @@ namespace Plugin.DeviceStorage
             }
         }
 
-        public IStorageFolder Movies
+        public Task<IStorageFolder> Movies
         {
             get
             {
@@ -63,7 +62,7 @@ namespace Plugin.DeviceStorage
             }
         }
 
-        public IStorageFolder Home
+        public Task<IStorageFolder> Home
         {
             get
             {
@@ -71,7 +70,7 @@ namespace Plugin.DeviceStorage
             }
         }
 
-        public IStorageFolder SDCard
+        public Task<IStorageFolder> SDCard
         {
             get
             {
@@ -79,7 +78,7 @@ namespace Plugin.DeviceStorage
             }
         }
 
-        public IStorageFolder Root
+        public Task<IStorageFolder> Root
         {
             get
             {
@@ -87,7 +86,7 @@ namespace Plugin.DeviceStorage
             }
         }
 
-        private IStorageFolder GetFolder(Folder folder = Folder.Downloads)
+        private Task<IStorageFolder> GetFolder(Folder folder = Folder.Downloads)
         {
             UWPFolders myfolder;
             switch (folder)
@@ -98,11 +97,7 @@ namespace Plugin.DeviceStorage
                     var array = localfolder.Split('\\');
                     var username = array[2];
                     string downloads = @"C:\Users\" + username + @"\Downloads";
-                    return new StorageFolder
-                    {
-                        FullPath = downloads,
-                        Name = "Downloads"
-                    };
+                    return StorageFolder.GetFolderFromPath(downloads);
 
                 case Folder.Movie:
                     myfolder = UWPFolder.VideosLibrary;
@@ -124,12 +119,7 @@ namespace Plugin.DeviceStorage
                     myfolder = UWPFolder.DocumentsLibrary;
                     break;
             }
-
-            return new StorageFolder
-            {
-                FullPath = myfolder.Path,
-                Name = myfolder.DisplayName
-            };
+            return StorageFolder.GetFolderFromPath(myfolder.Path);
         }
 
         public void SetPermissionRequest(IPermissionRequest permissionsolitier)
@@ -162,7 +152,7 @@ namespace Plugin.DeviceStorage
             {
                 files.Add(new StorageFile
                 {
-                    Attributes = FileAttributes.Normal,
+                    Attributes = System.IO.FileAttributes.Normal,
                     DisplayName = file.DisplayName,
                     DisplayType = file.DisplayType,
                     FullPath = file.Path,
@@ -207,7 +197,7 @@ namespace Plugin.DeviceStorage
             }
             return new StorageFile
             {
-                Attributes = (FileAttributes)((int)file.Attributes),
+                Attributes = (System.IO.FileAttributes)((int)file.Attributes),
                 DateCreated = file.DateCreated.DateTime,
                 DisplayName = file.DisplayName,
                 DisplayType = file.DisplayType,
@@ -248,10 +238,16 @@ namespace Plugin.DeviceStorage
             };
         }
 
-        public async Task Delete()
+        public async Task<bool> Delete()
         {
-            var folder = await GetUWPFolder(FullPath);
-            await folder.DeleteAsync();
+            try
+            {
+                var folder = await GetUWPFolder(FullPath);
+                await folder.DeleteAsync();
+                return true;
+            }
+            catch { }
+            return false;
         }
 
         public async Task<IStorageFolder> GetFolder(string name)
@@ -340,7 +336,7 @@ namespace Plugin.DeviceStorage
             internal set;
         }
 
-        public FileAttributes Attributes
+        public System.IO.FileAttributes Attributes
         {
             get;
             internal set;
@@ -379,13 +375,15 @@ namespace Plugin.DeviceStorage
             return null;
         }
 
-        public async Task Delete()
+        public async Task<bool> Delete()
         {
             if (await Exists())
             {
                 var file = await UWPFile.GetFileFromPathAsync(FullPath);
                 await file.DeleteAsync();
+                return true;
             }
+            return false;
         }
 
         public static async Task<StorageFile> GetFileFromPath(string path)
@@ -393,7 +391,7 @@ namespace Plugin.DeviceStorage
             var file = await UWPFile.GetFileFromPathAsync(path);
             return new StorageFile
             {
-                Attributes = (FileAttributes)((int)file.Attributes),
+                Attributes = (System.IO.FileAttributes)((int)file.Attributes),
                 DateCreated = file.DateCreated.DateTime,
                 DisplayName = file.DisplayName,
                 DisplayType = file.DisplayType,

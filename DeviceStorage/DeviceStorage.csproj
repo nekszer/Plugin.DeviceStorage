@@ -85,6 +85,10 @@
     <Compile Include="**\*.apple.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Xamarin.Essentials" Version="1.5.1" />
+  </ItemGroup>
+
   <!--Additional item groups-->
   <!--
   <ItemGroup Condition=" $(TargetFramework.StartsWith('Xamarin.TVOS')) ">

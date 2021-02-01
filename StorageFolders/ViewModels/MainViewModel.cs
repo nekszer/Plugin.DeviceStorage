@@ -22,7 +22,8 @@ namespace StorageFolders.ViewModels
         public override async void Appearing(string route, object data)
         {
             base.Appearing(route, data);
-            var downloads = CrossDeviceStorage.Current.Downloads;
+            var downloads = await CrossDeviceStorage.Current.Pictures;
+            if (downloads == null) return;
             var files = await downloads.GetFiles();
             Files = files;
         }

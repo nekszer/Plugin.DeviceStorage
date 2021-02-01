@@ -8,7 +8,7 @@ using Xamarin.Essentials;
 
 namespace StorageFolders
 {
-    public partial class App : LightFormsApplication, IPermissionRequest
+    public partial class App : LightFormsApplication
     {
 
         public App(IPlatformInitializer initializer = null) : base(initializer) { }
@@ -18,7 +18,6 @@ namespace StorageFolders
             base.OnInitialized();
             InitializeComponent();
             Initialize<MainPage, MainViewModel>("/main");
-            CrossDeviceStorage.Current.SetPermissionRequest(this);
         }
 
         protected override void OnStart()
@@ -38,20 +37,7 @@ namespace StorageFolders
 
         protected override void Routes(IRoutingService routingservice)
         {
-            // set routes 
-            // routingservice.Route<View,ViewModel>("/routename");
-        }
 
-        public async Task<bool> Request()
-        {
-            var read = await Permissions.CheckStatusAsync<Permissions.StorageRead>();
-            var write = await Permissions.CheckStatusAsync<Permissions.StorageWrite>();
-            if (read != PermissionStatus.Granted)
-                read = await Permissions.RequestAsync<Permissions.StorageRead>();
-            if (write != PermissionStatus.Granted)
-                write = await Permissions.RequestAsync<Permissions.StorageWrite>();
-            if (read != PermissionStatus.Granted || write != PermissionStatus.Granted) return false;
-            return true;
         }
     }
 }

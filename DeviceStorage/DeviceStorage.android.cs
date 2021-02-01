@@ -4,16 +4,35 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Xamarin.Essentials;
 
 namespace Plugin.DeviceStorage
 {
+
+	/// <summary>
+	/// Permission Request
+	/// </summary>
+	public class PermissionRequest : IPermissionRequest
+	{
+		public async Task<bool> Request()
+		{
+			var read = await Permissions.CheckStatusAsync<Permissions.StorageRead>();
+			var write = await Permissions.CheckStatusAsync<Permissions.StorageWrite>();
+			if (read != PermissionStatus.Granted)
+				read = await Permissions.RequestAsync<Permissions.StorageRead>();
+			if (write != PermissionStatus.Granted)
+				write = await Permissions.RequestAsync<Permissions.StorageWrite>();
+			return read == PermissionStatus.Granted && write == PermissionStatus.Granted;
+		}
+	}
+
 	/// <summary>
 	/// Interface for DeviceStorage
 	/// </summary>
 	public class DeviceStorageImplementation : IDeviceStorage
 	{
 
-		public IStorageFolder Documents
+		public Task<IStorageFolder> Documents
 		{
 			get
 			{
@@ -21,7 +40,7 @@ namespace Plugin.DeviceStorage
 			}
 		}
 
-		public IStorageFolder Downloads
+		public Task<IStorageFolder> Downloads
 		{
 			get
 			{
@@ -29,7 +48,7 @@ namespace Plugin.DeviceStorage
 			}
 		}
 
-		public IStorageFolder Music
+		public Task<IStorageFolder> Music
 		{
 			get
 			{
@@ -37,7 +56,7 @@ namespace Plugin.DeviceStorage
 			}
 		}
 
-		public IStorageFolder Pictures
+		public Task<IStorageFolder> Pictures
 		{
 			get
 			{
@@ -45,7 +64,7 @@ namespace Plugin.DeviceStorage
 			}
 		}
 
-		public IStorageFolder CameraRoll
+		public Task<IStorageFolder> CameraRoll
 		{
 			get
 			{
@@ -53,7 +72,7 @@ namespace Plugin.DeviceStorage
 			}
 		}
 
-		public IStorageFolder Movies
+		public Task<IStorageFolder> Movies
 		{
 			get
 			{
@@ -61,111 +80,55 @@ namespace Plugin.DeviceStorage
 			}
 		}
 
-		public IStorageFolder Home
+		public Task<IStorageFolder> Home
 		{
 			get
 			{
 				var path = Path.Combine(Android.OS.Environment.ExternalStorageDirectory.AbsolutePath);
-				var storagefolder = new StorageFolder();
-				string[] element = path.Split('/');
-				string foldername = element[element.Length - 1];
-				if (Directory.Exists(path))
-				{
-					storagefolder.FullPath = path;
-					storagefolder.Name = foldername;
-				}
-				else
-				{
-					throw new DirectoryNotFoundException("No existe el directorio " + foldername);
-				}
-				return storagefolder;
+				return StorageFolder.GetFolderFromPath(path);
 			}
 		}
 
-		public IStorageFolder SDCard
+		public Task<IStorageFolder> SDCard
 		{
 			get
 			{
 				string path = Path.Combine("/sdcard/");
-				StorageFolder storagefolder = new StorageFolder();
-				string[] element = path.Split('/');
-				string foldername = element[element.Length - 1];
-				if (Directory.Exists(path))
-				{
-					storagefolder.FullPath = path;
-					storagefolder.Name = foldername;
-				}
-				else
-				{
-					throw new DirectoryNotFoundException("No existe el directorio " + foldername);
-				}
-				return storagefolder;
+				return StorageFolder.GetFolderFromPath(path);
 			}
 		}
 
-		public IStorageFolder Root
+		public Task<IStorageFolder> Root
 		{
 			get
 			{
 				string path = Path.Combine(Android.OS.Environment.RootDirectory.AbsolutePath);
-				var storagefolder = new StorageFolder();
-				string[] element = path.Split('/');
-				string foldername = element[element.Length - 1];
-				if (Directory.Exists(path))
-				{
-					storagefolder.FullPath = path;
-					storagefolder.Name = foldername;
-				}
-				else
-				{
-					throw new DirectoryNotFoundException("No existe el directorio " + foldername);
-				}
-				return storagefolder;
+				return StorageFolder.GetFolderFromPath(path);
 			}
 		}
 
-		internal static IPermissionRequest PermissionSolitier { get; set; }
-		public void SetPermissionRequest(IPermissionRequest permissionsolitier)
+		private Task<IStorageFolder> GetFolder(Folder folder = Folder.Downloads)
 		{
-			PermissionSolitier = permissionsolitier;
-		}
-
-		private IStorageFolder GetFolder(Folder folder = Folder.Downloads)
-		{
-
-			var home = Home;
-			string foldername;
 			switch (folder)
 			{
 				case Folder.Downloads:
-					foldername = "Downloads";
-					break;
+					return StorageFolder.GetFolderFromPath("Downloads");
 
 				case Folder.Movie:
-					foldername = "Movies";
-					break;
+					return StorageFolder.GetFolderFromPath("Movies");
 
 				case Folder.Music:
-					foldername = "Music";
-					break;
+					return StorageFolder.GetFolderFromPath("Music");
 
 				case Folder.Pictures:
-					foldername = "DCIM";
-					break;
+					return StorageFolder.GetFolderFromPath("DCIM");
 
 				case Folder.CameraRoll:
-					foldername = "DCIM/Camera";
-					break;
+					return StorageFolder.GetFolderFromPath("DCIM/Camera");
 
 				default:
 					return Home;
 			}
-
-			return new StorageFolder
-			{
-				FullPath = Path.Combine(home.FullPath, foldername),
-				Name = foldername
-			};
 		}
 	}
 
@@ -183,12 +146,20 @@ namespace Plugin.DeviceStorage
 			set;
 		}
 
+		private StorageFolder()
+        {
+
+        }
+
 		public async Task<IEnumerable<IStorageFile>> GetFiles()
 		{
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return new List<IStorageFile>(0);
 			List<IStorageFile> files = new List<IStorageFile>();
 			if (Directory.Exists(FullPath))
 			{
-				var permissionok = await DeviceStorageImplementation.PermissionSolitier?.Request();
+				var permissionok = await new PermissionRequest().Request();
 				if (!permissionok) throw new ApplicationException("No tienes permisos para acceder a los archivos");
 				var enumeratefiles = Directory.EnumerateFiles(FullPath);
 				foreach (var file in enumeratefiles)
@@ -205,6 +176,9 @@ namespace Plugin.DeviceStorage
 
 		public async Task<IStorageFile> GetFile(string filenamewithextension)
 		{
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return null;
 			if (Directory.Exists(FullPath))
 			{
 				var filepath = Path.Combine(FullPath, filenamewithextension);
@@ -223,6 +197,9 @@ namespace Plugin.DeviceStorage
 
 		public async Task<IStorageFile> CreateFile(string filename, CreationCollisionOption option)
 		{
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return null;
 			var filepath = Path.Combine(FullPath, filename);
 			if (option == CreationCollisionOption.OpenIfExists)
 			{
@@ -274,6 +251,9 @@ namespace Plugin.DeviceStorage
 
 		public async Task<IStorageFolder> CreateFolder(string foldername, CreationCollisionOption option)
 		{
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return null;
 			var dirpath = Path.Combine(FullPath, foldername);
 			if (option == CreationCollisionOption.FailIfExists)
 			{
@@ -319,21 +299,24 @@ namespace Plugin.DeviceStorage
 			}
 		}
 
-		public async Task Delete()
+		public async Task<bool> Delete()
 		{
-			await HackAwait();
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return false;
 			if (Directory.Exists(FullPath))
 			{
 				Directory.Delete(FullPath);
+				return true;
 			}
-			else
-			{
-				throw new DirectoryNotFoundException("El directorio actual no existe, posiblemente haya sido borrado");
-			}
+			throw new DirectoryNotFoundException("El directorio actual no existe, posiblemente haya sido borrado");
 		}
 
 		public async Task<IStorageFolder> GetFolder(string name)
 		{
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return null;
 			if (Directory.Exists(FullPath))
 			{
 				var dir = Path.Combine(FullPath, name);
@@ -354,6 +337,9 @@ namespace Plugin.DeviceStorage
 
 		public async Task<IEnumerable<IStorageFolder>> GetFolders()
 		{
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return new List<IStorageFolder>(0);
 			List<IStorageFolder> folders = new List<IStorageFolder>();
 			if (Directory.Exists(FullPath))
 			{
@@ -381,7 +367,9 @@ namespace Plugin.DeviceStorage
 
 		public static async Task<IStorageFolder> GetFolderFromPath(string dirpath)
 		{
-			await HackAwait();
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return null;
 			var storagefolder = new StorageFolder();
 			string[] element = dirpath.Split('/');
 			string foldername = element[element.Length - 1];
@@ -396,18 +384,15 @@ namespace Plugin.DeviceStorage
 			}
 			return storagefolder;
 		}
-
-		private static async Task HackAwait()
-		{
-			await Task.Run(async () =>
-			{
-				await Task.Delay(1);
-			});
-		}
 	}
 
 	public class StorageFile : IStorageFile
 	{
+
+		private StorageFile()
+        {
+
+        }
 
 		public string FullPath
 		{
@@ -445,11 +430,6 @@ namespace Plugin.DeviceStorage
 			set;
 		}
 
-		public StorageFile()
-		{
-
-		}
-
 		public async Task<IStorageFile> CopyTo(IStorageFolder folderdestination)
 		{
 			return await CopyTo(folderdestination, Name);
@@ -462,6 +442,9 @@ namespace Plugin.DeviceStorage
 
 		public async Task<IStorageFile> CopyTo(IStorageFolder folderdestination, string filenamewithextension, NameCollisionOption option)
 		{
+			var status = await new PermissionRequest().Request();
+			if (!status) 
+				return null;
 			if (await Exists())
 			{
 				string outfilepath = Path.Combine(folderdestination.FullPath, filenamewithextension);
@@ -493,21 +476,25 @@ namespace Plugin.DeviceStorage
 					throw new FileNotFoundException("No fue posible copiar el archivo");
 				}
 			}
-			await HackAwait();
 			return null;
 		}
 
-		public async Task Delete()
+		public async Task<bool> Delete()
 		{
-			if (await Exists())
-			{
-				File.Delete(FullPath);
-				await HackAwait();
-			}
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return false;
+			if (!await Exists())
+				return false;
+			File.Delete(FullPath);
+			return true;
 		}
 
 		public static async Task<StorageFile> GetFileFromPath(string path)
 		{
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return null;
 			string[] element = path.Split('/');
 			string filenameext = element[element.Length - 1];
 			string[] elementfile = filenameext.Split('.');
@@ -515,7 +502,6 @@ namespace Plugin.DeviceStorage
 			string ext = elementfile[1];
 			var filedatetime = File.GetCreationTime(path);
 			var fileAttr = File.GetAttributes(path);
-			await HackAwait();
 			return new StorageFile
 			{
 				Name = filenameext,
@@ -529,9 +515,11 @@ namespace Plugin.DeviceStorage
 
 		public async Task<Stream> Open(FileAccessMode mode)
 		{
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return null;
 			if (await Exists())
 			{
-				await HackAwait();
 				if (mode == FileAccessMode.Read)
 				{
 					return File.OpenRead(FullPath);
@@ -549,7 +537,9 @@ namespace Plugin.DeviceStorage
 
 		private async Task<bool> Exists()
 		{
-			await HackAwait();
+			var status = await new PermissionRequest().Request();
+			if (!status)
+				return false;
 			if (File.Exists(FullPath))
 			{
 				return true;
@@ -567,14 +557,6 @@ namespace Plugin.DeviceStorage
 			GuidString = GuidString.Replace("=", "");
 			GuidString = GuidString.Replace("+", "");
 			return GuidString;
-		}
-
-		private static async Task HackAwait()
-		{
-			await Task.Run(async () =>
-			{
-				await Task.Delay(1);
-			});
 		}
 	}
 }

@@ -7,17 +7,15 @@ namespace Plugin.DeviceStorage
 {
     public interface IDeviceStorage
     {
-        IStorageFolder CameraRoll { get; }
-        IStorageFolder Documents { get; }
-        IStorageFolder Downloads { get; }
-        IStorageFolder Home { get; }
-        IStorageFolder Movies { get; }
-        IStorageFolder Music { get; }
-        IStorageFolder Pictures { get; }
-        IStorageFolder Root { get; }
-        IStorageFolder SDCard { get; }
-
-        void SetPermissionRequest(IPermissionRequest permissionsolitier);
+        Task<IStorageFolder> CameraRoll { get; }
+        Task<IStorageFolder> Documents { get; }
+        Task<IStorageFolder> Downloads { get; }
+        Task<IStorageFolder> Home { get; }
+        Task<IStorageFolder> Movies { get; }
+        Task<IStorageFolder> Music { get; }
+        Task<IStorageFolder> Pictures { get; }
+        Task<IStorageFolder> Root { get; }
+        Task<IStorageFolder> SDCard { get; }
     }
 
     public interface IPermissionRequest
@@ -35,7 +33,7 @@ namespace Plugin.DeviceStorage
         Task<IStorageFile> CopyTo(IStorageFolder folderdestination);
         Task<IStorageFile> CopyTo(IStorageFolder folderdestination, string filenamewithextension);
         Task<IStorageFile> CopyTo(IStorageFolder folderdestination, string filenamewithextension, NameCollisionOption option);
-        Task Delete();
+        Task<bool> Delete();
         Task<Stream> Open(FileAccessMode mode);
     }
 
@@ -48,7 +46,7 @@ namespace Plugin.DeviceStorage
         Task<IStorageFile> CreateFileAsync(string filename);
         Task<IStorageFolder> CreateFolder(string foldername);
         Task<IStorageFolder> CreateFolder(string foldername, CreationCollisionOption option);
-        Task Delete();
+        Task<bool> Delete();
         Task<IStorageFile> GetFile(string filenamewithextension);
         Task<IEnumerable<IStorageFile>> GetFiles();
         Task<IStorageFolder> GetFolder(string name);
